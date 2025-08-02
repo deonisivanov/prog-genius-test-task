@@ -1,10 +1,9 @@
 // @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
-import eslintPluginImport from 'eslint-plugin-import';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 export default tseslint.config(
   {
     ignores: ['eslint.config.mjs']
@@ -14,21 +13,17 @@ export default tseslint.config(
   eslintPluginPrettierRecommended,
   {
     plugins: {
-      import: eslintPluginImport
+      'simple-import-sort': simpleImportSort
     },
     rules: {
-      'import/order': [
-        'error',
-        {
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'object', 'type'],
-          'newlines-between': 'always',
-          alphabetize: { order: 'asc', caseInsensitive: true }
-        }
-      ],
-
+      'simple-import-sort/imports': 'warn',
+      'simple-import-sort/exports': 'warn',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn'
+      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off'
     }
   },
   {

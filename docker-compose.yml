@@ -1,0 +1,21 @@
+services:
+  postgres-db:
+    container_name: proggenius_db
+    image: postgres:15
+    restart: unless-stopped
+    env_file:
+      - ./app/server/.env
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - server-network
+
+volumes:
+  pgdata:
+    name: proggenius_pgdata
+
+networks:
+  server-network:
+    name: proggenius_server_network
