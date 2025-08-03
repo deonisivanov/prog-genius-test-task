@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import * as Entities from '@/entities';
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -12,7 +13,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         username: configService.getOrThrow('typeorm.username', { infer: true }),
         password: configService.getOrThrow('typeorm.password', { infer: true }),
         database: configService.getOrThrow('typeorm.database', { infer: true }),
-        synchronize: true
+        synchronize: true,
+        entities: Object.values(Entities)
       }),
       inject: [ConfigService]
     })
