@@ -1,75 +1,85 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { bufferTime, Subject } from 'rxjs';
 import { DataSource, Repository } from 'typeorm';
 
 import { Keys } from '@/entities';
 
-@Injectable()
-export class KeysService implements OnModuleInit, OnModuleDestroy {
-  private readonly keyStream$ = new Subject<string>();
-  private readonly keyCounts = new Map<string, number>();
-  private readonly updates$ = new Subject<{ key: string; count: number }>();
-  private subscription?: ReturnType<(typeof this.keyStream$)['subscribe']>;
+import { KeyDetailsDto } from './dto';
+import { KeysCounterService } from './keys-counter.service';
 
+@Injectable()
+export class KeysService {
   constructor(
     @InjectRepository(Keys)
     private readonly keysRepo: Repository<Keys>,
+    private readonly counter: KeysCounterService,
     private readonly dataSource: DataSource
   ) {}
 
   get onKeyUpdate() {
-    return this.updates$.asObservable();
-  }
-
-  async onModuleInit() {
-    const storedKeys = await this.keysRepo.find();
-    storedKeys.forEach(({ key, count }) => this.keyCounts.set(key, Number(count)));
-
-    this.subscription = this.keyStream$.pipe(bufferTime(1000)).subscribe((batch) => void this.flushToDb(batch));
-  }
-
-  onModuleDestroy() {
-    this.subscription?.unsubscribe();
+    return this.counter.onUpdate;
   }
 
   increment(key: string): number {
-    const current = this.keyCounts.get(key) ?? 0;
-    const next = current + 1;
-
-    this.keyCounts.set(key, next);
-    this.keyStream$.next(key);
-    this.updates$.next({ key, count: next });
-
-    return next;
+    return this.counter.increment(key);
   }
 
   getAll(): { key: string; count: number }[] {
-    return Array.from(this.keyCounts.entries()).map(([key, count]) => ({ key, count }));
+    return this.counter.getAllInMemory();
   }
 
-  private async flushToDb(batch: string[]) {
-    if (!batch.length) return;
+  async getByKey(key: string) {
+    return this.keysRepo.findOne({
+      where: { key },
+      select: ['key', 'count']
+    });
+  }
 
-    const aggregate = new Map<string, number>();
-    for (const key of batch) {
-      aggregate.set(key, (aggregate.get(key) ?? 0) + 1);
+  async getAllSorted(): Promise<Keys[]> {
+    return this.keysRepo.find({
+      order: { count: 'DESC' },
+      select: ['key', 'count']
+    });
+  }
+
+  async getKeyPage(keyName: string): Promise<KeyDetailsDto> {
+    const result = await this.dataSource.query<KeyDetailsDto[]>(
+      `
+			SELECT
+		current."key"   AS key,
+		current."count" AS count,
+
+		(SELECT prev."key"
+			FROM keys prev
+			WHERE prev."count" > current."count"
+			ORDER BY prev."count" ASC
+			LIMIT 1
+		) AS "prevKey",
+
+		(SELECT next."key"
+			FROM keys next
+			WHERE next."count" < current."count"
+			ORDER BY next."count" DESC
+			LIMIT 1
+		) AS "nextKey"
+
+		FROM keys current
+		WHERE current."key" = $1
+		LIMIT 1;
+      `,
+      [keyName]
+    );
+
+    if (result.length === 0) {
+      throw new NotFoundException(`Key "${keyName}" not found`);
     }
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      for (const [key, count] of aggregate.entries()) {
-        await queryRunner.manager.upsert(Keys, { key, count }, ['key']);
-      }
-
-      await queryRunner.commitTransaction();
-    } catch {
-      await queryRunner.rollbackTransaction();
-    } finally {
-      await queryRunner.release();
-    }
+    const row = result[0];
+    return {
+      key: row.key,
+      count: Number(row.count),
+      prevKey: row.prevKey,
+      nextKey: row.nextKey
+    };
   }
 }

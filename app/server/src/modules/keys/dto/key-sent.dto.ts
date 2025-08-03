@@ -1,6 +1,6 @@
 import { IsString, Length } from 'class-validator';
 
-export class KeypressDto {
+export class KeySentDto {
   @IsString()
   @Length(1, 1)
   key!: string;

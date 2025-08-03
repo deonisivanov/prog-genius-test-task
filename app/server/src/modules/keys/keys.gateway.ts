@@ -1,22 +1,23 @@
 import { OnModuleDestroy, OnModuleInit, UsePipes } from '@nestjs/common';
 import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Subscription } from 'rxjs';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 
 import { WsValidationPipe } from '@/common/pipes/ws-validation.pipe';
 
-import { KeypressDto } from './dto';
+import { KeySentDto } from './dto';
 import { KeysService } from './keys.service';
 
+@UsePipes(new WsValidationPipe())
 @WebSocketGateway({ namespace: 'keys' })
 export class KeysGateway implements OnModuleInit, OnModuleDestroy {
   @WebSocketServer() server!: Server;
   private updateSub?: Subscription;
 
-  constructor(private readonly counter: KeysService) {}
+  constructor(private readonly keysService: KeysService) {}
 
   onModuleInit() {
-    this.updateSub = this.counter.onKeyUpdate.subscribe(({ key, count }) => {
+    this.updateSub = this.keysService.onKeyUpdate.subscribe(({ key, count }) => {
       this.server.emit('stats', { key, count });
     });
   }
@@ -25,9 +26,12 @@ export class KeysGateway implements OnModuleInit, OnModuleDestroy {
     this.updateSub?.unsubscribe();
   }
 
+  handleConnection(client: Socket) {
+    client.emit('stats', this.keysService.getAll());
+  }
+
   @SubscribeMessage('keypress')
-  @UsePipes(new WsValidationPipe())
-  handleKey(@MessageBody() dto: KeypressDto) {
-    this.counter.increment(dto.key);
+  handleKey(@MessageBody() dto: KeySentDto) {
+    this.keysService.increment(dto.key);
   }
 }
