@@ -1,6 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
 
-import { KeyDetailsDto } from './dto';
+import { KeypressStatDetails } from './dto';
 import { KeysService } from './keys.service';
 
 @Controller('keys')
@@ -13,7 +13,7 @@ export class KeysController {
   }
 
   @Get(':key')
-  async getOne(@Param('key') key: string): Promise<KeyDetailsDto> {
+  async getOne(@Param('key') key: string): Promise<KeypressStatDetails> {
     return this.keysService.getKeyPage(key);
   }
 }

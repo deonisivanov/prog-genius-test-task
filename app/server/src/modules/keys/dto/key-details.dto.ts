@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-export class KeyDetailsDto {
+export class KeypressStatDetails {
   @IsString()
   key!: string;
 

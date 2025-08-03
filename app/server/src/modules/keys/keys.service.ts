@@ -4,7 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 
 import { Keys } from '@/entities';
 
-import { KeyDetailsDto } from './dto';
+import { KeypressStatDetails } from './dto';
 import { KeysCounterService } from './keys-counter.service';
 
 @Injectable()
@@ -42,8 +42,8 @@ export class KeysService {
     });
   }
 
-  async getKeyPage(keyName: string): Promise<KeyDetailsDto> {
-    const result = await this.dataSource.query<KeyDetailsDto[]>(
+  async getKeyPage(keyName: string): Promise<KeypressStatDetails> {
+    const result = await this.dataSource.query<KeypressStatDetails[]>(
       `
 			SELECT
 		current."key"   AS key,
