@@ -45,16 +45,12 @@ export class KeysService {
   getKeyPage(keyName: string): KeypressStatDetails {
     const memoryStats = this.counter.getAllInMemory();
 
-    // Находим текущую клавишу
     const current = memoryStats.find((k) => k.key === keyName);
     if (!current) {
       throw new NotFoundException(`Key "${keyName}" not found`);
     }
 
-    // Сортируем по убыванию count (чтобы "назад" — это больше count)
-    const sorted = [...memoryStats].sort(
-      (a, b) => (b.count !== a.count ? b.count - a.count : a.key.localeCompare(b.key)) // стабильность при одинаковом count
-    );
+    const sorted = [...memoryStats].sort((a, b) => (b.count !== a.count ? b.count - a.count : a.key.localeCompare(b.key)));
 
     const index = sorted.findIndex((k) => k.key === keyName);
     const prevKey = index > 0 ? sorted[index - 1].key : null;
