@@ -28,6 +28,13 @@ export class KeysService {
     return this.counter.getAllInMemory();
   }
 
+  async getAllSorted(): Promise<Keys[]> {
+    return this.keysRepo.find({
+      order: { count: 'DESC' },
+      select: ['key', 'count']
+    });
+  }
+
   async getByKey(key: string) {
     return this.keysRepo.findOne({
       where: { key },

@@ -7,6 +7,11 @@ import { KeysService } from './keys.service';
 export class KeysController {
   constructor(private readonly keysService: KeysService) {}
 
+  @Get()
+  async getAll() {
+    return this.keysService.getAllSorted();
+  }
+
   @Get(':key')
   getOne(@Param('key') key: string): KeypressStatDetails {
     return this.keysService.getKeyPage(key);
