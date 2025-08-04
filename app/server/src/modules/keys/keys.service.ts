@@ -45,28 +45,28 @@ export class KeysService {
   async getKeyPage(keyName: string): Promise<KeypressStatDetails> {
     const result = await this.dataSource.query<KeypressStatDetails[]>(
       `
-			SELECT
-		current."key"   AS key,
-		current."count" AS count,
+		  SELECT
+			current."key"   AS key,
+			current."count" AS count,
 
-		(SELECT prev."key"
-			FROM keys prev
-			WHERE prev."count" > current."count"
-			ORDER BY prev."count" ASC
-			LIMIT 1
-		) AS "prevKey",
+			(SELECT prev."key"
+			  FROM keys prev
+			  WHERE prev."count" > current."count"
+			  ORDER BY prev."count" ASC, prev."key" ASC
+			  LIMIT 1
+			) AS "prevKey",
 
-		(SELECT next."key"
-			FROM keys next
-			WHERE next."count" < current."count"
-			ORDER BY next."count" DESC
-			LIMIT 1
-		) AS "nextKey"
+			(SELECT next."key"
+			  FROM keys next
+			  WHERE next."count" < current."count"
+			  ORDER BY next."count" DESC, next."key" ASC
+			  LIMIT 1
+			) AS "nextKey"
 
-		FROM keys current
-		WHERE current."key" = $1
-		LIMIT 1;
-      `,
+		  FROM keys current
+		  WHERE current."key" = $1
+		  LIMIT 1;
+		`,
       [keyName]
     );
 

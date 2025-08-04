@@ -1,5 +1,2 @@
-import { redirect } from "next/navigation";
-
-export default function HomePage() {
-  redirect("/keypress");
-}
+import KeypressPage from "./keypress/page";
+export default KeypressPage;

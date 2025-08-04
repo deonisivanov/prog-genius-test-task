@@ -15,6 +15,7 @@ export async function generateStaticParams() {
 
 export default async function KeyPage({ params }: { params: { key: string } }) {
   const keyData = await fetchKeyData(params.key).catch(() => notFound());
+  console.log(keyData);
 
   return <KeypressStat keyData={keyData} />;
 }
