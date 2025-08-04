@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 import { Keys } from '@/entities';
 
@@ -12,8 +12,7 @@ export class KeysService {
   constructor(
     @InjectRepository(Keys)
     private readonly keysRepo: Repository<Keys>,
-    private readonly counter: KeysCounterService,
-    private readonly dataSource: DataSource
+    private readonly counter: KeysCounterService
   ) {}
 
   get onKeyUpdate() {
