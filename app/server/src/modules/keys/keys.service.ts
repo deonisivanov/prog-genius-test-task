@@ -35,51 +35,29 @@ export class KeysService {
     });
   }
 
-  async getAllSorted(): Promise<Keys[]> {
-    return this.keysRepo.find({
-      order: { count: 'DESC' },
-      select: ['key', 'count']
-    });
-  }
+  getKeyPage(keyName: string): KeypressStatDetails {
+    const memoryStats = this.counter.getAllInMemory();
 
-  async getKeyPage(keyName: string): Promise<KeypressStatDetails> {
-    const result = await this.dataSource.query<KeypressStatDetails[]>(
-      `
-		  SELECT
-			current."key"   AS key,
-			current."count" AS count,
-
-			(SELECT prev."key"
-			  FROM keys prev
-			  WHERE prev."count" > current."count"
-			  ORDER BY prev."count" ASC, prev."key" ASC
-			  LIMIT 1
-			) AS "prevKey",
-
-			(SELECT next."key"
-			  FROM keys next
-			  WHERE next."count" < current."count"
-			  ORDER BY next."count" DESC, next."key" ASC
-			  LIMIT 1
-			) AS "nextKey"
-
-		  FROM keys current
-		  WHERE current."key" = $1
-		  LIMIT 1;
-		`,
-      [keyName]
-    );
-
-    if (result.length === 0) {
+    // Находим текущую клавишу
+    const current = memoryStats.find((k) => k.key === keyName);
+    if (!current) {
       throw new NotFoundException(`Key "${keyName}" not found`);
     }
 
-    const row = result[0];
+    // Сортируем по убыванию count (чтобы "назад" — это больше count)
+    const sorted = [...memoryStats].sort(
+      (a, b) => (b.count !== a.count ? b.count - a.count : a.key.localeCompare(b.key)) // стабильность при одинаковом count
+    );
+
+    const index = sorted.findIndex((k) => k.key === keyName);
+    const prevKey = index > 0 ? sorted[index - 1].key : null;
+    const nextKey = index < sorted.length - 1 ? sorted[index + 1].key : null;
+
     return {
-      key: row.key,
-      count: Number(row.count),
-      prevKey: row.prevKey,
-      nextKey: row.nextKey
+      key: current.key,
+      count: current.count,
+      prevKey,
+      nextKey
     };
   }
 }
